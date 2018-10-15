@@ -129,6 +129,30 @@ int beargit_status() {
 
 int beargit_rm(const char* filename) {
   /* COMPLETE THE REST */
+  
+  FILE *findex=fopen(".beargit/.index","r");
+  FILE *fnewindex=fopen(".beargit/.newindex","w");
+
+  char line[FILENAME_SIZE];
+  int file_found=0;
+  while(fgets(line,sizeof(line),findex)){
+      strtok(line,"\n");
+      if(strcmp(line,filename)==0){
+        file_found=1;
+        }else{
+          fprintf(fnewindex,"%s\n",line);
+      
+        }
+      }
+   fclose(findex);
+   fclose(fnewindex);
+   if(file_found){
+      fs_mv(".beargit/.newindex",".beargit/.index");
+   }else{
+      fprintf(stderr,"ERROR:  File %s not tracked.\n",filename);
+      fs_rm(".beargit/.newindex");
+      return 3;
+   }
 
   return 0;
 }
