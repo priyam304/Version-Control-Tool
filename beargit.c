@@ -167,6 +167,9 @@ const char* go_bears = "THIS IS BEAR TERRITORY!";
 
 int is_commit_msg_ok(const char* msg) {
   /* COMPLETE THE REST */
+  if(strstr(msg,go_bears)!=NULL){
+    return 1;
+  }
   return 0;
 }
 
@@ -177,9 +180,13 @@ int is_commit_msg_ok(const char* msg) {
  * You will need to use a function we have provided for you.
  */
 
-void next_commit_id(char* commit_id) {
+void next_commit_id(char *commit_id_raw) {
      /* COMPLETE THE REST */
-}
+    char commit_id[COMMIT_ID_SIZE];
+    cryptohash(commit_id_raw,commit_id);    
+    strcpy(commit_id_raw,commit_id);
+  
+  }
 
 int beargit_commit(const char* msg) {
   if (!is_commit_msg_ok(msg)) {
@@ -187,11 +194,51 @@ int beargit_commit(const char* msg) {
     return 1;
   }
 
-  char commit_id[COMMIT_ID_SIZE];
-  read_string_from_file(".beargit/.prev", commit_id, COMMIT_ID_SIZE);
+  char prev_commit_id[COMMIT_ID_SIZE];
+  char branchname[BRANCHNAME_SIZE];
+  char commit_id[COMMIT_ID_SIZE+BRANCHNAME_SIZE];
+  char path_commit[(FILENAME_SIZE*3)+3];
+  
+  FILE *findex;
+
+
+  read_string_from_file(".beargit/.prev", prev_commit_id, COMMIT_ID_SIZE);
+  read_string_from_file(".beargit/.current_branch",branchname,BRANCHNAME_SIZE);
+  strcpy(commit_id,prev_commit_id);
+  strcat(commit_id,branchname);
   next_commit_id(commit_id);
 
   /* COMPLETE THE REST */
+  strcpy(path_commit,".beargit/");
+  strcat(path_commit,commit_id);
+  fs_mkdir(path_commit);
+  
+  strcat(path_commit,"/");
+  fs_cp(".beargit/.index",path_commit,".index");
+  fs_cp(".beargit/.prev",path_commit,".prev");
+
+
+  findex=fopen(".beargit/.index","r");
+  if(findex!=NULL){
+      char filename[FILENAME_SIZE];
+      while(fgets(filename,sizeof(filename),findex)){
+          strtok(filename,"\n");
+          fs_cp(filename,path_commit,filename);
+        }
+
+  }
+
+  fclose(findex);
+
+  strcat(path_commit,".msg");
+  findex=fopen(path_commit,"w");
+  fprintf(findex, "%s\n",msg);
+  fclose(findex);
+
+  findex=fopen(".beargit/.prev","w");
+  fprintf(findex,"%s\n",commit_id);
+  fclose(findex);
+  
 
   return 0;
 }
@@ -266,7 +313,7 @@ int beargit_checkout(const char* arg, int new_branch) {
   if (strlen(current_branch)) {
     char current_branch_file[BRANCHNAME_SIZE+50];
     sprintf(current_branch_file, ".beargit/.branch_%s", current_branch);
-    fs_cp(".beargit/.prev", current_branch_file);
+    fs_cp(".beargit/.prev", current_branch_file,NULL);
   }
 
    // Check whether the argument is a commit ID. If yes, we just change to detached mode
@@ -306,7 +353,7 @@ int beargit_checkout(const char* arg, int new_branch) {
     FILE* fbranches = fopen(".beargit/.branches", "a");
     fprintf(fbranches, "%s\n", branch_name);
     fclose(fbranches);
-    fs_cp(".beargit/.prev", branch_file);
+    fs_cp(".beargit/.prev", branch_file,NULL);
   }
 
   write_string_to_file(".beargit/.current_branch", branch_name);

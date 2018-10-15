@@ -13,7 +13,7 @@ int beargit_merge(const char* arg);
 
 // Helper functions
 int get_branch_number(const char* branch_name);
-void next_commit_id(char* commit_id);
+void next_commit_id(char *commit_id);
 
 // Number of bytes in a commit id
 #define COMMIT_ID_BYTES SHA_HEX_BYTES

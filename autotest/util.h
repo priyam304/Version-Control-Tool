@@ -62,7 +62,7 @@ void fs_mkdir(const char* dirname);
 void fs_rm(const char* filename);
 void fs_force_rm_beargit_dir();
 void fs_mv(const char* src, const char* dst);
-void fs_cp(const char* src, const char* dst);
+void fs_cp(const char* src, const char* dst, const char *filename);
 void write_string_to_file(const char* filename, const char* str);
 void read_string_from_file(const char* filename, char* str, int size);
 int fs_check_dir_exists(const char* dirname);

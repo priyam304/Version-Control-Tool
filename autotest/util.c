@@ -35,14 +35,18 @@ void fs_mv(const char* src, const char* dst) {
   ASSERT_ERROR_MESSAGE(ret == 0, "renaming file failed");
 }
 
-void fs_cp(const char* src, const char* dst) {
+void fs_cp(const char* src, const char* dst,const char *filename) {
   ASSERT_ERROR_MESSAGE(src != NULL, "src is not a valid string");
   ASSERT_ERROR_MESSAGE(dst != NULL, "dst is not a valid string");
   ASSERT_ERROR_MESSAGE(is_sane_path(dst), "dst is not a valid path within .beargit");
 
   FILE* fin = fopen(src, "r");
   ASSERT_ERROR_MESSAGE(fin != NULL, "couldn't open source file");
-  FILE* fout = fopen(dst, "w");
+
+  char destination_file[(512*2)+1];
+  strcpy(destination_file,dst);
+  strcpy(destination_file,filename);
+  FILE* fout = fopen(destination_file, "w");
   ASSERT_ERROR_MESSAGE(fout != NULL, "couldn't open destination file");
 
   char buffer[4096];
