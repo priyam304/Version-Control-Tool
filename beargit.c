@@ -329,6 +329,21 @@ int get_branch_number(const char* branch_name) {
 
 int beargit_branch() {
   /* COMPLETE THE REST */
+  char branchname[BRANCHNAME_SIZE];
+  char current_branchname[BRANCHNAME_SIZE];
+  FILE *fbranches=fopen(".beargit/.branches","r");
+  FILE *fcurrent_branch=fopen(".beargit/.current_branch","r");
+  fgets(current_branchname,sizeof(current_branchname),fcurrent_branch);
+  strtok(current_branchname,"\n");
+
+  while(fgets(branchname,sizeof(branchname),fbranches)){
+      strtok(branchname,"\n");
+      if(strcmp(branchname,current_branchname)==0){
+        fprintf(stdout, "*  %s\n",branchname);
+      }else{
+        fprintf(stdout, "%s\n",branchname);
+      }
+  }
 
   return 0;
 }
@@ -352,7 +367,7 @@ int is_it_a_commit_id(const char* commit_id) {
 int beargit_checkout(const char* arg, int new_branch) {
   // Get the current branch
   char current_branch[BRANCHNAME_SIZE];
-  read_string_from_file(".beargit/.current_branch", "current_branch", BRANCHNAME_SIZE);
+  read_string_from_file(".beargit/.current_branch",current_branch, BRANCHNAME_SIZE);
 
   // If not detached, leave the current branch by storing the current HEAD into that branch's file...
   if (strlen(current_branch)) {
