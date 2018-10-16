@@ -247,10 +247,55 @@ int beargit_commit(const char* msg) {
  *
  * See "Step 4" in the project spec.
  *
+ How  this works:
+ Read commit id from .beargit/.prev file and store it in commit_id.
+ Check if there is a directory corresponding to commit_path (if not print error message)
+LABEL:go inside directory.
+    Read from .msg file in .beargit/<commit-id>/
+    print the commit and message to stdout
+    Read from .prev file in .beargit/<commit-id>/
+    change the commit path
+    decreament the limit if provided 
+    check if the directory corresponding to commit_path exist and limit >0(if not the stop)
+    Repeat LABEL;
  */
 
 int beargit_log(int limit) {
   /* COMPLETE THE REST */
+  char commit_id[COMMIT_ID_SIZE];
+  char commit_msg[MSG_SIZE];
+  char commit_path[(COMMIT_ID_SIZE)+25]; //size= ".beargit/<Commit_ID_SIZE>/.prev"
+  char msg_path[(COMMIT_ID_SIZE)+25]; //size= ".beargit/<Commit_ID_SIZE>/.msg"
+  const char *beargit=".beargit/";
+
+
+
+  strcpy(commit_path,beargit);
+  read_string_from_file(".beargit/.prev",commit_id,sizeof(commit_id));
+  strtok(commit_id,"\n");
+  strcat(commit_path,commit_id);
+  if(!fs_check_dir_exists(commit_path)){
+    fprintf(stderr, "ERROR:  There are no commits.\n");
+  }else{
+    do{
+      //clearing the msg_path string to change it
+      strcpy(msg_path,commit_path);
+      strcat(msg_path,"/.msg");
+      read_string_from_file(msg_path,commit_msg,sizeof(commit_msg));
+      strtok(commit_msg,"\n");
+      fprintf(stdout, "commit %s\n    %s\n\n",commit_id,commit_msg);
+
+
+      strcat(commit_path,"/.prev");
+      read_string_from_file(commit_path,commit_id,sizeof(commit_id));
+      strtok(commit_id,"\n");
+     
+     //clearing commit_path string to change it.
+      strcpy(commit_path,beargit);
+      strcat(commit_path,commit_id);
+      limit--;
+    }while(fs_check_dir_exists(commit_path)&& limit>0);
+  }
   return 0;
 }
 
