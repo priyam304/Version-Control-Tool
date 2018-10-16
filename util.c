@@ -45,7 +45,7 @@ void fs_cp(const char* src, const char* dst,const char *filename) {
 
   char destination_file[(512*2)+1];
   strcpy(destination_file,dst);
-  strcpy(destination_file,filename);
+  strcat(destination_file,filename);
   FILE* fout = fopen(destination_file, "w");
   ASSERT_ERROR_MESSAGE(fout != NULL, "couldn't open destination file");
 
