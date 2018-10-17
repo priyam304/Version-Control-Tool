@@ -230,14 +230,17 @@ int beargit_commit(const char* msg) {
 
   fclose(findex);
 
-  strcat(path_commit,".msg");
-  findex=fopen(path_commit,"w");
-  fprintf(findex, "%s\n",msg);
-  fclose(findex);
 
-  findex=fopen(".beargit/.prev","w");
+  strcat(path_commit,".msg");
+  write_string_to_file(path_commit,msg);
+  /*findex=fopen(path_commit,"w");
+  fprintf(findex, "%s\n",msg);
+  fclose(findex);*/
+
+  write_string_to_file(".beargit/.prev",commit_id);
+  /*findex=fopen(".beargit/.prev","w");
   fprintf(findex,"%s\n",commit_id);
-  fclose(findex);
+  fclose(findex);*/
   
 
   return 0;
@@ -344,7 +347,8 @@ int beargit_branch() {
         fprintf(stdout, "%s\n",branchname);
       }
   }
-
+  fclose(fbranches);
+  fclose(fcurrent_branch);
   return 0;
 }
 
@@ -356,12 +360,47 @@ int beargit_branch() {
 
 int checkout_commit(const char* commit_id) {
   /* COMPLETE THE REST */
+  char tracked_files[FILENAME_SIZE+50];
+  char commited_file[FILENAME_SIZE+COMMIT_ID_SIZE+50];
+  FILE *findex=fopen(".beargit/.index","r");
+  char filename[FILENAME_SIZE];
+  
+  while(fgets(filename,sizeof(filename),findex)){
+    strtok(filename,"\n");
+    snprintf(tracked_files,sizeof(tracked_files),".beargit/%s",filename);
+    fs_rm(filename);
+  }
+
+  fclose(findex);
+
+  char commit_path[FILENAME_SIZE+50];
+  snprintf(commit_path,sizeof(commit_path),".beargit/%s/.index",commit_id);
+  fs_cp(commit_path,".beargit/.index",NULL);
+  
+  //snprintf(commit_path,sizeof(commit_path),".beargit/%s/.prev",commit_id);
+  write_string_to_file(".beargit/.prev",commit_id);
+
+
+  findex=fopen(".beargit/.index","r");
+
+  while(fgets(filename,sizeof(filename),findex)){
+    strtok(filename,"\n");
+    snprintf(commited_file,sizeof(commited_file),".beargit/%s/%s",commit_id,filename);
+    snprintf(tracked_files,sizeof(tracked_files),"%s",filename);
+    fs_cp(commited_file,tracked_files,NULL);
+  }
+  fclose(findex);
   return 0;
 }
 
 int is_it_a_commit_id(const char* commit_id) {
-  /* COMPLETE THE REST */
-  return 1;
+  
+  char commit_dir_path[COMMIT_ID_SIZE+50];
+  snprintf(commit_dir_path,sizeof(commit_dir_path),".beargit/%s",commit_id);
+  if(fs_check_dir_exists(commit_dir_path)) return 1;
+  else return 0;
+
+
 }
 
 int beargit_checkout(const char* arg, int new_branch) {
@@ -393,10 +432,10 @@ int beargit_checkout(const char* arg, int new_branch) {
   int branch_exists = (get_branch_number(arg) >= 0);
 
   // Check for errors.
-  if (!(!branch_exists || !new_branch)) {
+  if (new_branch && branch_exists) {
     fprintf(stderr, "ERROR:  A branch named %s already exists.\n", arg);
     return 1;
-  } else if (!branch_exists && new_branch) {
+  } else if (!branch_exists && !new_branch) {
     fprintf(stderr, "ERROR:  No branch or commit %s exists.\n", arg);
     return 1;
   }
@@ -405,7 +444,7 @@ int beargit_checkout(const char* arg, int new_branch) {
   const char* branch_name = arg;
 
   // File for the branch we are changing into.
-  char* branch_file = ".beargit/.branch_";
+  char branch_file[BRANCHNAME_SIZE+50] = ".beargit/.branch_";
   strcat(branch_file, branch_name);
 
   // Update the branch file if new branch is created (now it can't go wrong anymore)
@@ -413,7 +452,7 @@ int beargit_checkout(const char* arg, int new_branch) {
     FILE* fbranches = fopen(".beargit/.branches", "a");
     fprintf(fbranches, "%s\n", branch_name);
     fclose(fbranches);
-    fs_cp(".beargit/.prev", branch_file,NULL);
+    fs_cp(".beargit/.prev",branch_file,NULL);
   }
 
   write_string_to_file(".beargit/.current_branch", branch_name);
@@ -421,6 +460,7 @@ int beargit_checkout(const char* arg, int new_branch) {
   // Read the head commit ID of this branch.
   char branch_head_commit_id[COMMIT_ID_SIZE];
   read_string_from_file(branch_file, branch_head_commit_id, COMMIT_ID_SIZE);
+  strtok(branch_head_commit_id,"\n");
 
   // Check out the actual commit.
   return checkout_commit(branch_head_commit_id);
@@ -440,11 +480,34 @@ int beargit_reset(const char* commit_id, const char* filename) {
 
   // Check if the file is in the commit directory
   /* COMPLETE THIS PART */
+    char commit_path[COMMIT_ID_SIZE+50];
+    char tracked_file[FILENAME_SIZE];
+    snprintf(commit_path,sizeof(commit_path),".beargit/%s/.index",commit_id);
+    FILE *findex=fopen(commit_path,"r");
+    int file_exist=0;
+    while(fgets(tracked_file,sizeof(tracked_file),findex)){
+      strtok(tracked_file,"\n");
+      if(strcmp(tracked_file,filename)==0){
+        file_exist=1;
+      }
+
+    }
+
+    if(!file_exist){
+      fprintf(stderr, "ERROR:  %s is not in the index of commit %s.\n", filename,commit_id);
+      return 1;
+    }
+    fclose(findex);
 
   // Copy the file to the current working directory
   /* COMPLETE THIS PART */
+    snprintf(commit_path,sizeof(commit_path),".beargit/%s/%s",commit_id,filename);
+    fs_cp(commit_path,filename,NULL);
 
   // Add the file if it wasn't already there
+    findex=fopen(".beargit/.index","a");
+    fprintf(findex,"%s\n",filename);
+    fclose(findex);
   /* COMPLETE THIS PART */
 
   return 0;
