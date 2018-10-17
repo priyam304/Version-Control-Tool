@@ -537,6 +537,40 @@ int beargit_merge(const char* arg) {
   // Iterate through each line of the commit_id index and determine how you
   // should copy the index file over
    /* COMPLETE THE REST */
+  char commit_path[COMMIT_ID_SIZE+50];
+  FILE *fcurrent_branch=fopen(".beargit/.index","r+");
+  snprintf(commit_path,sizeof(commit_path),".beargit/%s/.index",commit_id);
+
+  FILE *fcommited=fopen(commit_path,"r");
+  FILE *fupdate_index;
+  char tracked_filename[FILENAME_SIZE],current_filename[FILENAME_SIZE];
+  char extented_filename[FILENAME_SIZE+50];
+  char file_tracked;
+  while(fgets(tracked_filename,sizeof(tracked_filename),fcommited)){
+    strtok(tracked_filename,"\n");
+    file_tracked=0;
+    while(fgets(current_filename,sizeof(current_filename),fcurrent_branch)){
+      strtok(current_filename,"\n");
+      if(strcmp(tracked_filename,current_filename)==0){
+        fprintf(stdout, "%s conflicted copy created\n",current_filename);
+        snprintf(extented_filename,sizeof(extented_filename),"%s.%s",current_filename,commit_id);
+        snprintf(commit_path,sizeof(commit_path),".beargit/%s/%s",commit_id,current_filename);
+        fs_cp(commit_path,extented_filename,NULL);
+        file_tracked=1;
+        break;
+      }
+    }
+    if(!file_tracked){
+        snprintf(commit_path,sizeof(commit_path),".beargit/%s/%s",commit_id,tracked_filename);
+        fs_cp(commit_path,tracked_filename,NULL);
+        fupdate_index=fopen(".beargit/.index","a");
+        fprintf(fupdate_index, "%s\n",tracked_filename);
+        fprintf(stdout,"%s added\n",tracked_filename );
+    }
+  }
+
+fclose(fcommited);
+fclose(fcurrent_branch);
 
   return 0;
 }
